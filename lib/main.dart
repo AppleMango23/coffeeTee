@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'second.dart';
 
 void main() => runApp(new MyApp());
 
@@ -28,41 +28,60 @@ class _TouchIDState extends State<TouchID> {
   final LocalAuthentication localAuth = LocalAuthentication();
   bool _canCheckBiometric = false;
   String _authorizeText = 'Not Authorized!';
-
+  String dateOfAuth = '';
 
   List<BiometricType> availableBiometrics = List<BiometricType>();
 
   Future<void> _authorize() async {
-    var now = new DateTime.now();
-    // var setNow;
-    print(now);
     bool _isAuthorized = false;
-    try {
-      _isAuthorized = await localAuth.authenticateWithBiometrics(
-        localizedReason: 'TEST to Complete this process',
-        useErrorDialogs: false,
-        stickyAuth: false,
-      );
+    var now = new DateTime.now();
+    
+    if(_authorizeText != 'Authorized Successfully!'){
+        try {
+        _isAuthorized = await localAuth.authenticateWithBiometrics(
+          localizedReason: '',
+          useErrorDialogs: true,
+          stickyAuth: true,
+        );
 
-      // setNow = now.hour;
-      
-      // if(now.hour > setNow){
-      //   print('fingerprint expired');
-      // }
+        // setNow = now.hour;
 
-    } on PlatformException catch (e) {
-      print(e);
-    }
+        Timer(Duration(days: 1), () {
+        print('time expired');
+        _isAuthorized = false;
+        setState(() {
+        if (_isAuthorized) {
+          _authorizeText = "Authorized Successfully!";
+          dateOfAuth = now.toString();
+        } else {
+          _authorizeText = "10 seconds passed expired!";
+        }
+      });
+      });
+        
+        // if(now.hour > setNow){
+        //   print('fingerprint expired');
+        // }
 
-    if (!mounted) return;
-
-    setState(() {
-      if (_isAuthorized) {
-        _authorizeText = "Authorized Successfully!";
-      } else {
-        _authorizeText = "Not Authorized!";
+      } on PlatformException catch (e) {
+        print(e);
       }
-    });
+
+      if (!mounted) return;
+
+      setState(() {
+        if (_isAuthorized) {
+          _authorizeText = "Authorized Successfully!";
+          _isAuthorized = true;
+          dateOfAuth = now.toString();
+        } else {
+          _authorizeText = "Not Authorized!";
+        }
+      });
+    }
+    else{
+      print('in else');
+    }
   }
 
   testingFunction(context){
@@ -117,6 +136,7 @@ class _TouchIDState extends State<TouchID> {
               },
 
           ),
+
           ],
         );
       },
@@ -124,11 +144,7 @@ class _TouchIDState extends State<TouchID> {
 
     
 
-    Timer(Duration(seconds: 9), () {
-      print('heyy');
-      // Scaffold.of(context).hideCurrentSnackBar();
-      
-    });
+    
   }
 
   testingSaveFunction()async{
@@ -152,6 +168,7 @@ class _TouchIDState extends State<TouchID> {
 
   @override
   Widget build(BuildContext context) {
+    // _TouchIDState();
     return Scaffold(
       appBar: AppBar(title: Text('Touch ID Auth Example')),
       
@@ -163,7 +180,12 @@ class _TouchIDState extends State<TouchID> {
         children: <Widget>[
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Text(_authorizeText),
+            child: new Column (
+            children: <Widget>[
+              Text(_authorizeText, textAlign: TextAlign.left),
+              new Text (dateOfAuth, textAlign: TextAlign.right),
+            ],
+          ),
           ),
           RaisedButton(
             child: Text('Authorize'),
